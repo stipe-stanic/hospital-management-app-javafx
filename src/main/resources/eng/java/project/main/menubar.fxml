@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+        <?import javafx.scene.control.Menu?>
+        <?import javafx.scene.control.MenuBar?>
+        <?import javafx.scene.control.MenuItem?>
+        <?import javafx.scene.layout.GridPane?>
+
+<MenuBar GridPane.columnSpan="4" GridPane.valignment="TOP" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eng.java.project.main.controller.MenuController">
+<menus>
+    <Menu mnemonicParsing="false" text="Home">
+        <items>
+            <MenuItem mnemonicParsing="false" onAction="#showHome" text="Show" />
+        </items>
+    </Menu>
+    <Menu mnemonicParsing="false" text="Doctors">
+        <items>
+            <MenuItem mnemonicParsing="false" onAction="#showDoctors" text="Show" />
+            <MenuItem mnemonicParsing="false" onAction="#insertNewDoctor" text="Insert" />
+            <MenuItem mnemonicParsing="false" onAction="#editDoctor" text="Edit" />
+        </items>
+    </Menu>
+    <Menu mnemonicParsing="false" text="Patients">
+        <items>
+            <MenuItem mnemonicParsing="false" onAction="#showPatients" text="Show" />
+            <MenuItem mnemonicParsing="false" onAction="#insertNewPatient" text="Insert" />
+            <MenuItem mnemonicParsing="false" onAction="#editPatient" text="Edit" />
+        </items>
+    </Menu>
+    <Menu mnemonicParsing="false" text="Departments">
+        <items>
+            <MenuItem mnemonicParsing="false" onAction="#showDepartments" text="Show" />
+            <MenuItem mnemonicParsing="false" onAction="#insertNewDepartment" text="Insert" />
+            <MenuItem mnemonicParsing="false" onAction="#editDepartment" text="Edit" />
+        </items>
+    </Menu>
+    <Menu mnemonicParsing="false" text="MedicalDevices">
+        <items>
+            <MenuItem mnemonicParsing="false" onAction="#showMedicalDevices" text="Show" />
+            <MenuItem mnemonicParsing="false" onAction="#insertNewMedicalDevice" text="Insert" />
+            <MenuItem mnemonicParsing="false" onAction="#editMedicalDevice" text="Edit" />
+        </items>
+    </Menu>
+    <Menu  mnemonicParsing="false" text="EditHistory">
+        <MenuItem mnemonicParsing="false" onAction="#showEditHistory" text="Show" />
+    </Menu>
+</menus>
+</MenuBar>
