@@ -85,4 +85,9 @@ public class Department extends Entity implements CoreObject {
     public void setAppliancesList(List<MedicalDevice> appliancesList) {
         this.appliancesList = appliancesList;
     }
+
+    @Override
+    public String toString() {
+        return name;
+    }
 }

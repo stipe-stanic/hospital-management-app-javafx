@@ -5,8 +5,10 @@ import eng.java.project.entity.hospital.core.Doctor;
 import eng.java.project.exception.DatabaseQueryException;
 import eng.java.project.main.HealthcareApplication;
 import eng.java.project.main.LocalDateConverter;
+import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.TextField;
 import org.slf4j.Logger;
@@ -39,13 +41,27 @@ public class DoctorInsertController {
     @FXML
     public TextField workEndTime;
     @FXML
-    public TextField departmentId;
+    public ChoiceBox<Department> department;
 
     private static final Logger logger = LoggerFactory.getLogger(DoctorInsertController.class);
+    private List<Department> allDepartments;
 
 
     public void initialize() {
         dateOfBirth.setConverter(new LocalDateConverter(DateTimeFormatter.ofPattern("dd.MM.yyyy")));
+
+        try {
+            allDepartments = HealthcareApplication.getDatabaseSource().queryAllDepartments();
+        } catch (DatabaseQueryException ex) {
+            String msg = "Error ocurred while fetching departments to display on insert screen";
+            logger.error(msg, ex);
+
+            Alert alert = new Alert(Alert.AlertType.ERROR, msg);
+            alert.setTitle("Error");
+            alert.show();
+        }
+
+        department.setItems(FXCollections.observableList(allDepartments));
     }
     @FXML
     public void insertNewDoctor() {
@@ -78,8 +94,8 @@ public class DoctorInsertController {
         if (workEndTime.getText().isBlank()) {
             messages.add("Work end time field is empty");
         }
-        if (departmentId.getText().isBlank()) {
-            messages.add("Department id field is empty");
+        if (department.getSelectionModel().getSelectedItem() == null) {
+            messages.add("Department is not chosen");
         }
 
         if(messages.size() == 0) {
@@ -93,7 +109,7 @@ public class DoctorInsertController {
 
 
             try {
-                HealthcareApplication.getDatabaseSource().insertDoctor(doctor, Long.valueOf(departmentId.getText()));
+                HealthcareApplication.getDatabaseSource().insertDoctor(doctor, department.getValue().getId());
 
                 name.clear();
                 surname.clear();
@@ -104,7 +120,7 @@ public class DoctorInsertController {
                 yearsOfWorkExperience.clear();
                 workStartTime.clear();
                 workEndTime.clear();
-                departmentId.clear();
+                department.setValue(null);
 
                 Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Entry successful");
                 alert.setTitle("Success");
