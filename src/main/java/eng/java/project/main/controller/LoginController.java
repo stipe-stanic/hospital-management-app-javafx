@@ -6,6 +6,7 @@ import eng.java.project.main.GlobalUser;
 import eng.java.project.main.HealthcareApplication;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
@@ -45,6 +46,13 @@ public class LoginController {
         } else {
             username.clear();
             password.clear();
+
+            logger.info("The user entered an incorrect username or password while logging in to the application");
+
+            String msg = "Wrong username or password!";
+            Alert deleteAlert = new Alert(Alert.AlertType.INFORMATION, msg);
+            deleteAlert.setTitle("Information");
+            deleteAlert.show();
         }
     }
 
