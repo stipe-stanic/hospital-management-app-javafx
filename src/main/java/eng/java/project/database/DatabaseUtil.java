@@ -42,6 +42,7 @@ public final class DatabaseUtil implements DatabaseSource {
         return DriverManager.getConnection(databaseURL, databaseUser, databasePassword);
     }
 
+
     private static MedicalDevice queryMedicalDeviceById(Long idAppliance, Connection connection) throws DatabaseQueryException {
         MedicalDevice device = null;
 
@@ -75,8 +76,6 @@ public final class DatabaseUtil implements DatabaseSource {
 
         return device;
     }
-
-
     private static Patient queryPatientById(Long idPatient, Connection connection) throws DatabaseQueryException {
         Patient patient = null;
 
@@ -94,7 +93,6 @@ public final class DatabaseUtil implements DatabaseSource {
                 LocalDate dateOfBirth = result.getTimestamp("date_of_birth").toInstant().atZone(
                         ZoneId.systemDefault()).toLocalDate();
                 String phoneNumber = result.getString("phone_number");
-                Long doctor_id = result.getLong("doctor_id");
 
                 List<Appointment> appointmentList = queryAppointmentsOfPatient(id, connection);
                 History<AppointmentHistory> appointmentHistory = filterHistoryAppointments(appointmentList);
@@ -162,11 +160,11 @@ public final class DatabaseUtil implements DatabaseSource {
     }
 
 
-    private static List<Patient> queryPatientsOfDoctor(Long idDoctor, Connection connection) throws DatabaseQueryException {
+    private static List<Patient> queryPatientsOfDoctor(Long idDepartment, Connection connection) throws DatabaseQueryException {
         List<Patient> patientList = new ArrayList<>();
         try {
             StringBuilder sqlQuery = new StringBuilder("SELECT * FROM PATIENT WHERE 1=1");
-            sqlQuery.append(" AND DOCTOR_ID = ").append(idDoctor);
+            sqlQuery.append(" AND DEPARTMENT_ID = ").append(idDepartment);
 
             PreparedStatement statement = connection.prepareStatement(sqlQuery.toString());
             ResultSet result = statement.executeQuery();
@@ -178,7 +176,6 @@ public final class DatabaseUtil implements DatabaseSource {
                 LocalDate dateOfBirth = result.getTimestamp("date_of_birth").toInstant().atZone(
                         ZoneId.systemDefault()).toLocalDate();
                 String phoneNumber = result.getString("phone_number");
-                Long doctor_id = result.getLong("doctor_id");
                 Long department_id = result.getLong("department_id");
 
                 List<Appointment> appointmentList = queryAppointmentsOfPatient(id, connection);
@@ -291,8 +288,6 @@ public final class DatabaseUtil implements DatabaseSource {
                 LocalTime time = result.getTimestamp("time").toLocalDateTime().toLocalTime();
                 String doctorNote = result.getString("doctor_note");
 
-                // Doctor doctor = queryDoctorById(doctor_id, connection);
-
                 Appointment appointment = new Appointment.AppointmentBuilder(id)
                         .withDate(date).withTime(time).build();
 
@@ -325,7 +320,6 @@ public final class DatabaseUtil implements DatabaseSource {
                 LocalTime time = result.getTimestamp("time").toLocalDateTime().toLocalTime();
                 Long appliance_id= result.getLong("medical_device_id");
 
-                // Doctor doctor = queryDoctorById(doctor_id, connection);
                 MedicalDevice medicalDevice = queryMedicalDeviceById(appliance_id, connection);
 
                 Treatment treatment = new Treatment.TreatmentBuilder(id, date, time)
@@ -387,7 +381,7 @@ public final class DatabaseUtil implements DatabaseSource {
     }
 
 
-    private static List<Doctor> queryDoctorByDepartment(Long idDepartment, Connection connection) throws DatabaseQueryException {
+    private static List<Doctor> queryDoctorsByDepartmentId(Long idDepartment, Connection connection) throws DatabaseQueryException {
         List<Doctor> doctorList = new ArrayList<>();
 
         try {
@@ -429,7 +423,7 @@ public final class DatabaseUtil implements DatabaseSource {
 
         return doctorList;
     }
-    private static List<Patient> queryPatientByDepartment(Long idDepartment, Connection connection) throws DatabaseQueryException {
+    private static List<Patient> queryPatientsByDepartmentId(Long idDepartment, Connection connection) throws DatabaseQueryException {
         List<Patient> patientList = new ArrayList<>();
 
         try {
@@ -446,9 +440,6 @@ public final class DatabaseUtil implements DatabaseSource {
                 LocalDate dateOfBirth = result.getTimestamp("date_of_birth").toInstant().atZone(
                         ZoneId.systemDefault()).toLocalDate();
                 String phoneNumber = result.getString("phone_number");
-                Long doctor_id = result.getLong("doctor_id");
-
-                // Doctor doctor = queryDoctorById(doctor_id, connection);
 
                 List<Appointment> appointmentList = queryAppointmentsOfPatient(id, connection);
                 History<AppointmentHistory> appointmentHistory = filterHistoryAppointments(appointmentList);
@@ -479,7 +470,7 @@ public final class DatabaseUtil implements DatabaseSource {
 
         return patientList;
     }
-    private static List<MedicalDevice> queryApplianceByDepartment(Long idDepartment, Connection connection) throws DatabaseQueryException {
+    private static List<MedicalDevice> queryAppliancesByDepartmentId(Long idDepartment, Connection connection) throws DatabaseQueryException {
         List<MedicalDevice> applianceList = new ArrayList<>();
 
         try {
@@ -537,8 +528,9 @@ public final class DatabaseUtil implements DatabaseSource {
                 Integer yearsOfExperience = result.getInt("years_of_experience");
                 LocalTime workStartTime = result.getTimestamp("work_start_time").toLocalDateTime().toLocalTime();
                 LocalTime workEndTime = result.getTimestamp("work_end_time").toLocalDateTime().toLocalTime();
+                Long departmendId = result.getLong("department_id");
 
-                List<Patient> patientList = queryPatientsOfDoctor(id, connection);
+                List<Patient> patientList = queryPatientsByDepartmentId(departmendId, connection);
                 List<Appointment> appointmentList = queryAppointmentsOfDoctor(id, connection);
 
                 Doctor doctor = new Doctor.DoctorBuilder(id).withName(name).withSurname(surname).withTitle(title).
@@ -557,121 +549,6 @@ public final class DatabaseUtil implements DatabaseSource {
 
         return doctorList;
     }
-    public List<Patient> queryAllPatients() throws DatabaseQueryException {
-        List<Patient> patientList = new ArrayList<>();
-
-        try(Connection connection = connectToDatabase()) {
-            String sqlQuery = "SELECT * FROM PATIENT";
-
-            PreparedStatement statement = connection.prepareStatement(sqlQuery);
-            ResultSet result = statement.executeQuery();
-
-            while(result.next()) {
-                Long id = result.getLong("id");
-                String name = result.getString("name");
-                String surname = result.getString("surname");
-                LocalDate dateOfBirth = result.getTimestamp("date_of_birth").toInstant().atZone(
-                        ZoneId.systemDefault()).toLocalDate();
-                String phoneNumber = result.getString("phone_number");
-                Long doctor_id = result.getLong("doctor_id");
-
-                // Doctor doctor = queryDoctorById(doctor_id, connection);
-
-                List<Appointment> appointmentList = queryAppointmentsOfPatient(id, connection);
-                History<AppointmentHistory> appointmentHistory = filterHistoryAppointments(appointmentList);
-
-                List<Treatment> treatmentList = queryTreatmentsOfPatient(id, connection);
-                History<TreatmentHistory> treatmentHistory = filterHistoryTreatments(treatmentList);
-
-                List<Symptom> symptomList = querySymptomsOfPatient(id, connection);
-                History<SymptomHistory> symptomHistory = filterHistorySymptoms(symptomList);
-
-                InsuranceProvider insuranceProvider = queryInsuranceProviderOfPatient(id, connection);
-
-
-                Patient patient = new Patient.PatientBuilder(id).withName(name).withSurname(surname).
-                        withDateOfBirth(dateOfBirth).withPhoneNumber(phoneNumber)
-                        .withAppointmentList(appointmentList).withAppointmentHistory(appointmentHistory).
-                        withTreatmentList(treatmentList).withTreatmentHistory(treatmentHistory).
-                        withSymptomList(symptomList).withSymptomHistory(symptomHistory).
-                        withInsurance(insuranceProvider).build();
-
-                patientList.add(patient);
-            }
-        } catch (SQLException | IOException ex) {
-            String message = "Error occurred while selecting all patients from database";
-            logger.error(message, ex);
-            throw new DatabaseQueryException(message, ex);
-        }
-
-        return patientList;
-    }
-    public  List<Department> queryAllDepartments() throws DatabaseQueryException {
-        List<Department> departmentList = new ArrayList<>();
-
-        try(Connection connection = connectToDatabase()) {
-            String sqlQuery = "SELECT * FROM DEPARTMENT WHERE 1=1";
-
-            PreparedStatement statement = connection.prepareStatement(sqlQuery);
-            ResultSet result = statement.executeQuery();
-
-            while(result.next()) {
-                Long id = result.getLong("id");
-                String name = result.getString("name");
-
-                List<Doctor> doctorList = queryDoctorByDepartment(id, connection);
-                List<Patient> patientList = queryPatientByDepartment(id, connection);
-                List<MedicalDevice> applianceList = queryApplianceByDepartment(id, connection);
-
-                Department department = new Department.DepartmentBuilder(id).withName(name).withDoctors(doctorList)
-                                .withPatients(patientList).withAppliances(applianceList).build();
-
-                departmentList.add(department);
-            }
-        } catch (SQLException | IOException ex) {
-            String message = "Error occurred while selecting all departments from database";
-            logger.error(message, ex);
-            throw new DatabaseQueryException(message, ex);
-        }
-
-        return departmentList;
-    }
-    public  List<MedicalDevice> queryAllMedicalDevices() throws DatabaseQueryException {
-        List<MedicalDevice> applianceList = new ArrayList<>();
-
-        try(Connection connection = connectToDatabase()) {
-            String sqlQuery = "SELECT * FROM MEDICAL_DEVICE";
-
-            PreparedStatement statement = connection.prepareStatement(sqlQuery);
-            ResultSet result = statement.executeQuery();
-
-            while(result.next()) {
-                Long id = result.getLong("id");
-                String name = result.getString("name");
-                String manufacturerName = result.getString("manufacturer_name");
-                Integer modelNumber = result.getInt("model_number");
-                Long serialNumber = result.getLong("serial_number");
-                String typeOfDevice = result.getString("type");
-                LocalDate dateOfPurchase = result.getTimestamp("date_of_purchase").toInstant().atZone(
-                        ZoneId.systemDefault()).toLocalDate();
-                LocalDate expirationDate = result.getTimestamp("expiration_date").toInstant().atZone(
-                        ZoneId.systemDefault()).toLocalDate();
-
-                MedicalDevice medicalDevice = new MedicalDevice(id, name, manufacturerName, modelNumber, serialNumber,
-                        typeOfDevice, dateOfPurchase, expirationDate);
-
-                applianceList.add(medicalDevice);
-            }
-        } catch (SQLException | IOException ex) {
-            String message = "Error occurred while selecting all medical devices from database";
-            logger.error(message, ex);
-            throw new DatabaseQueryException(message, ex);
-        }
-
-        return applianceList;
-    }
-
-
     public void deleteDoctor(Doctor doctor) throws DatabaseQueryException {
         try (Connection connection = connectToDatabase()) {
             StringBuilder sqlQuery = new StringBuilder("DELETE FROM DOCTOR WHERE 1=1");
@@ -749,6 +626,37 @@ public final class DatabaseUtil implements DatabaseSource {
         }
     }
 
+
+    public  List<Department> queryAllDepartments() throws DatabaseQueryException {
+        List<Department> departmentList = new ArrayList<>();
+
+        try(Connection connection = connectToDatabase()) {
+            String sqlQuery = "SELECT * FROM DEPARTMENT WHERE 1=1";
+
+            PreparedStatement statement = connection.prepareStatement(sqlQuery);
+            ResultSet result = statement.executeQuery();
+
+            while(result.next()) {
+                Long id = result.getLong("id");
+                String name = result.getString("name");
+
+                List<Doctor> doctorList = queryDoctorsByDepartmentId(id, connection);
+                List<Patient> patientList = queryPatientsByDepartmentId(id, connection);
+                List<MedicalDevice> applianceList = queryAppliancesByDepartmentId(id, connection);
+
+                Department department = new Department.DepartmentBuilder(id).withName(name).withDoctors(doctorList)
+                        .withPatients(patientList).withAppliances(applianceList).build();
+
+                departmentList.add(department);
+            }
+        } catch (SQLException | IOException ex) {
+            String message = "Error occurred while selecting all departments from database";
+            logger.error(message, ex);
+            throw new DatabaseQueryException(message, ex);
+        }
+
+        return departmentList;
+    }
     public void deleteDepartment(Department department) throws DatabaseQueryException {
         try (Connection connection = connectToDatabase()) {
             StringBuilder sqlQuery = new StringBuilder("DELETE FROM DEPARTMENT WHERE 1=1");
@@ -805,6 +713,41 @@ public final class DatabaseUtil implements DatabaseSource {
         }
     }
 
+
+    public  List<MedicalDevice> queryAllMedicalDevices() throws DatabaseQueryException {
+        List<MedicalDevice> applianceList = new ArrayList<>();
+
+        try(Connection connection = connectToDatabase()) {
+            String sqlQuery = "SELECT * FROM MEDICAL_DEVICE";
+
+            PreparedStatement statement = connection.prepareStatement(sqlQuery);
+            ResultSet result = statement.executeQuery();
+
+            while(result.next()) {
+                Long id = result.getLong("id");
+                String name = result.getString("name");
+                String manufacturerName = result.getString("manufacturer_name");
+                Integer modelNumber = result.getInt("model_number");
+                Long serialNumber = result.getLong("serial_number");
+                String typeOfDevice = result.getString("type");
+                LocalDate dateOfPurchase = result.getTimestamp("date_of_purchase").toInstant().atZone(
+                        ZoneId.systemDefault()).toLocalDate();
+                LocalDate expirationDate = result.getTimestamp("expiration_date").toInstant().atZone(
+                        ZoneId.systemDefault()).toLocalDate();
+
+                MedicalDevice medicalDevice = new MedicalDevice(id, name, manufacturerName, modelNumber, serialNumber,
+                        typeOfDevice, dateOfPurchase, expirationDate);
+
+                applianceList.add(medicalDevice);
+            }
+        } catch (SQLException | IOException ex) {
+            String message = "Error occurred while selecting all medical devices from database";
+            logger.error(message, ex);
+            throw new DatabaseQueryException(message, ex);
+        }
+
+        return applianceList;
+    }
     public void deleteMedicalDevice(MedicalDevice medicalDevice) throws DatabaseQueryException {
         try (Connection connection = connectToDatabase()) {
             StringBuilder sqlQuery = new StringBuilder("DELETE FROM MEDICAL_DEVICE WHERE 1=1");
@@ -876,6 +819,52 @@ public final class DatabaseUtil implements DatabaseSource {
         }
     }
 
+
+    public List<Patient> queryAllPatients() throws DatabaseQueryException {
+        List<Patient> patientList = new ArrayList<>();
+
+        try(Connection connection = connectToDatabase()) {
+            String sqlQuery = "SELECT * FROM PATIENT";
+
+            PreparedStatement statement = connection.prepareStatement(sqlQuery);
+            ResultSet result = statement.executeQuery();
+
+            while(result.next()) {
+                Long id = result.getLong("id");
+                String name = result.getString("name");
+                String surname = result.getString("surname");
+                LocalDate dateOfBirth = result.getTimestamp("date_of_birth").toInstant().atZone(
+                        ZoneId.systemDefault()).toLocalDate();
+                String phoneNumber = result.getString("phone_number");
+
+                List<Appointment> appointmentList = queryAppointmentsOfPatient(id, connection);
+                History<AppointmentHistory> appointmentHistory = filterHistoryAppointments(appointmentList);
+
+                List<Treatment> treatmentList = queryTreatmentsOfPatient(id, connection);
+                History<TreatmentHistory> treatmentHistory = filterHistoryTreatments(treatmentList);
+
+                List<Symptom> symptomList = querySymptomsOfPatient(id, connection);
+                History<SymptomHistory> symptomHistory = filterHistorySymptoms(symptomList);
+
+                InsuranceProvider insuranceProvider = queryInsuranceProviderOfPatient(id, connection);
+
+                Patient patient = new Patient.PatientBuilder(id).withName(name).withSurname(surname).
+                        withDateOfBirth(dateOfBirth).withPhoneNumber(phoneNumber)
+                        .withAppointmentList(appointmentList).withAppointmentHistory(appointmentHistory).
+                        withTreatmentList(treatmentList).withTreatmentHistory(treatmentHistory).
+                        withSymptomList(symptomList).withSymptomHistory(symptomHistory).
+                        withInsurance(insuranceProvider).build();
+
+                patientList.add(patient);
+            }
+        } catch (SQLException | IOException ex) {
+            String message = "Error occurred while selecting all patients from database";
+            logger.error(message, ex);
+            throw new DatabaseQueryException(message, ex);
+        }
+
+        return patientList;
+    }
     public void deletePatient(Patient patient) throws DatabaseQueryException {
         try (Connection connection = connectToDatabase()) {
             StringBuilder sqlQuery = new StringBuilder("DELETE FROM PATIENT WHERE 1=1");
@@ -923,17 +912,16 @@ public final class DatabaseUtil implements DatabaseSource {
             throw new DatabaseQueryException(message, ex);
         }
     }
-    public void insertPatient(Patient patient, Long doctorId, Long departmendId) throws DatabaseQueryException {
+    public void insertPatient(Patient patient, Long departmendId) throws DatabaseQueryException {
         try(Connection connection = connectToDatabase()) {
             PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO PATIENT(name, surname, " +
-                    "date_of_birth, phone_number, doctor_id, department_id) VALUES(?, ?, ?, ?, ?, ?)");
+                    "date_of_birth, phone_number, doctor_id, department_id) VALUES(?, ?, ?, ?, ?)");
 
             preparedStatement.setString(1, patient.getName());
             preparedStatement.setString(2, patient.getSurname());
             preparedStatement.setDate(3, Date.valueOf(patient.getDateOfBirth()));
             preparedStatement.setString(4, patient.getPhoneNumber());
-            preparedStatement.setLong(5, doctorId);
-            preparedStatement.setLong(6, departmendId);
+            preparedStatement.setLong(5, departmendId);
 
             preparedStatement.executeUpdate();
 
@@ -943,6 +931,7 @@ public final class DatabaseUtil implements DatabaseSource {
             throw new DatabaseQueryException(message, ex);
         }
     }
+
 
     private static History<AppointmentHistory> filterHistoryAppointments(List<Appointment> appointments) {
         History<AppointmentHistory> appointmentHistory = new History<>();

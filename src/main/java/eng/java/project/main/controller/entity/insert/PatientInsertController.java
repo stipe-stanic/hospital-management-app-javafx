@@ -1,14 +1,18 @@
 package eng.java.project.main.controller.entity.insert;
 
+import eng.java.project.entity.hospital.core.Department;
 import eng.java.project.entity.hospital.core.Doctor;
 import eng.java.project.entity.hospital.core.Patient;
 import eng.java.project.exception.DatabaseQueryException;
 import eng.java.project.main.HealthcareApplication;
 import eng.java.project.main.LocalDateConverter;
+import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.TextField;
+import org.h2.command.query.Query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,18 +28,30 @@ public class PatientInsertController {
     @FXML
     public TextField surname;
     @FXML
+    public DatePicker dateOfBirth;
+    @FXML
     public TextField phoneNumber;
     @FXML
-    public TextField doctorId;
-    @FXML
-    public TextField departmentId;
-    @FXML
-    public DatePicker dateOfBirth;
+    public ChoiceBox<Department> department;
 
     private static final Logger logger = LoggerFactory.getLogger(PatientInsertController.class);
+    private List<Department> allDepartments;
 
     public void initialize() {
         dateOfBirth.setConverter(new LocalDateConverter(DateTimeFormatter.ofPattern("dd.MM.yyyy")));
+
+        try {
+            allDepartments = HealthcareApplication.getDatabaseSource().queryAllDepartments();
+        } catch (DatabaseQueryException ex) {
+            String msg = "Error ocurred while fetching departments to display on insert screen";
+            logger.error(msg, ex);
+
+            Alert alert = new Alert(Alert.AlertType.ERROR, msg);
+            alert.setTitle("Error");
+            alert.show();
+        }
+
+        department.setItems(FXCollections.observableList(allDepartments));
     }
 
     @FXML
@@ -54,11 +70,8 @@ public class PatientInsertController {
         if (phoneNumber.getText().isBlank()) {
             messages.add("Phone number field is empty");
         }
-        if (doctorId.getText().isBlank()) {
-            messages.add("Doctor id field is empty");
-        }
-        if (departmentId.getText().isBlank()) {
-            messages.add("Department id field is empty");
+        if (department.getSelectionModel().getSelectedItem() == null) {
+            messages.add("Department is not choosen");
         }
 
         if(messages.size() == 0) {
@@ -68,8 +81,7 @@ public class PatientInsertController {
                     .build();
 
             try {
-                HealthcareApplication.getDatabaseSource().insertPatient(patient, Long.valueOf(doctorId.getText()),
-                        Long.valueOf(departmentId.getText()));
+                HealthcareApplication.getDatabaseSource().insertPatient(patient, department.getValue().getId());
 
                 Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Entry successful");
                 alert.setTitle("Success");
@@ -79,8 +91,7 @@ public class PatientInsertController {
                 surname.clear();
                 dateOfBirth.setValue(null);
                 phoneNumber.clear();
-                doctorId.clear();
-                departmentId.clear();
+                department.setValue(null);
             } catch(DatabaseQueryException ex) {
                 String msg = "Error occurred on 'insert' screen while inserting new patient object to database";
                 logger.error(msg, ex);

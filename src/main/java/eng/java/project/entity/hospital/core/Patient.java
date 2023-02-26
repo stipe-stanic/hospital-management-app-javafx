@@ -19,7 +19,6 @@ public class Patient extends Entity implements CoreObject {
    private String surname;
    private LocalDate dateOfBirth;
    private String phoneNumber;
-   // private Doctor doctor;
    private List<Appointment> appointmentList;
    private History<AppointmentHistory> appointmentHistory;
    private List<Treatment> treatmentsList;
@@ -34,7 +33,6 @@ public class Patient extends Entity implements CoreObject {
       private String surname;
       private LocalDate dateOfBirth;
       private String phoneNumber;
-      // private Doctor doctor;
       private List<Appointment> appointmentList;
       private History<AppointmentHistory> appointmentHistory;
       private List<Treatment> treatmentsList;
@@ -118,7 +116,6 @@ public class Patient extends Entity implements CoreObject {
       this.surname = builder.surname;
       this.dateOfBirth = builder.dateOfBirth;
       this.phoneNumber = builder.phoneNumber;
-      // this.doctor = builder.doctor;
       this.appointmentList = builder.appointmentList;
       this.appointmentHistory = builder.appointmentHistory;
       this.treatmentsList = builder.treatmentsList;
@@ -175,14 +172,6 @@ public class Patient extends Entity implements CoreObject {
    public void setPhoneNumber(String phoneNumber) {
       this.phoneNumber = phoneNumber;
    }
-
-//   public Doctor getDoctor() {
-//      return doctor;
-//   }
-
-//   public void setDoctor(Doctor doctor) {
-//      this.doctor = doctor;
-//   }
 
    public List<Appointment> getAppointmentList() {
       return appointmentList;

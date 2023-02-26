@@ -25,7 +25,7 @@ public sealed interface DatabaseSource permits DatabaseUtil {
     List<Patient> queryAllPatients() throws DatabaseQueryException;
     void deletePatient(Patient patient) throws DatabaseQueryException;
     void updatePatient(Patient patient, String sqlQuery, List<String> parameters) throws DatabaseQueryException, ParameterNotFound;
-    void insertPatient(Patient patient, Long doctorId, Long departmentId) throws DatabaseQueryException;
+    void insertPatient(Patient patient, Long departmentId) throws DatabaseQueryException;
 
     List<Department> queryAllDepartments() throws DatabaseQueryException;
     void deleteDepartment(Department department) throws DatabaseQueryException;
