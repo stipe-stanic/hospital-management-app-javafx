@@ -11,7 +11,7 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 
-public class HealthcareApplication extends Application {
+public final class HealthcareApplication extends Application {
     public static Stage appStage;
     private static final DatabaseSource databaseUtil = new DatabaseUtil();
     private static final int WINDOW_WIDTH = 800;

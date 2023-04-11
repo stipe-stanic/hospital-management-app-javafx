@@ -1,9 +1,10 @@
-package eng.java.project.main.controller;
+package eng.java.project.main.controller.entity.edit_history;
 
-import eng.java.project.entity.hospital.core.*;
+import eng.java.project.entity.hospital.core.CoreObject;
+import eng.java.project.entity.hospital.core.MedicalDevice;
+import eng.java.project.entity.hospital.core.Patient;
 import eng.java.project.entity.hospital.util.EditInfo;
 import eng.java.project.main.GlobalUser;
-import eng.java.project.main.controller.entity.view.DoctorController;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.scene.control.TableColumn;
@@ -18,9 +19,8 @@ import java.io.ObjectInputStream;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
-public class EditHistoryController {
+public class MedicalDeviceEditHistoryController {
     public TableColumn<EditInfo<CoreObject, GlobalUser>, String> entityColumn;
     public TableColumn<EditInfo<CoreObject, GlobalUser>, String> oldDataColumn;
     public TableColumn<EditInfo<CoreObject, GlobalUser>, String> newDataColumn;
@@ -30,26 +30,12 @@ public class EditHistoryController {
     public TableColumn<EditInfo<CoreObject, GlobalUser>, String> timeColumn;
     public TableView<EditInfo<CoreObject, GlobalUser>> editHistoryTableView;
 
-    private static final Logger logger = LoggerFactory.getLogger(EditHistoryController.class);
+    private static final Logger logger = LoggerFactory.getLogger(MedicalDeviceEditHistoryController.class);
     private List<EditInfo<CoreObject, GlobalUser>> editInfoList = new ArrayList<>();
-    private static final String SERIALIZED_FILE_NAME_DOCTOR = "files\\edited_doctor_object.dat";
-    private static final String SERIALIZED_FILE_NAME_PATIENT = "files\\edited_patient_object.dat";
+    private static final String SERIALIZED_FILE_NAME_MEDICAL_DEVICE = "files\\edited_medical_device_object.dat";
 
     public void initialize() {
-        try(ObjectInputStream in = new ObjectInputStream(new FileInputStream(SERIALIZED_FILE_NAME_DOCTOR))) {
-            try {
-                List<EditInfo<CoreObject, GlobalUser>> object = (List<EditInfo<CoreObject, GlobalUser>>) in.readObject();
-                editInfoList.addAll(object);
-            } catch (EOFException ex) {
-                String msg = "Reached end of file when deserializing 'EditInfo' objects";
-                logger.info(msg, ex);
-            }
-        } catch (IOException | ClassNotFoundException ex) {
-            String msg = "Error occurred while attempting deserialization of 'EditInfo' object";
-            logger.error(msg, ex);
-        }
-
-        try(ObjectInputStream in = new ObjectInputStream(new FileInputStream(SERIALIZED_FILE_NAME_PATIENT))) {
+        try(ObjectInputStream in = new ObjectInputStream(new FileInputStream(SERIALIZED_FILE_NAME_MEDICAL_DEVICE))) {
             try {
                 List<EditInfo<CoreObject, GlobalUser>> object = (List<EditInfo<CoreObject, GlobalUser>>) in.readObject();
                 editInfoList.addAll(object);
@@ -65,14 +51,8 @@ public class EditHistoryController {
         entityColumn.setCellValueFactory(data -> {
             EditInfo<CoreObject, GlobalUser> object = data.getValue();
             CoreObject afterEditObject = object.getAfterEditObject();
-            if (afterEditObject instanceof Doctor doctor) {
-                return new SimpleStringProperty(doctor.getTitle() + " " + doctor.getName() + " " + doctor.getSurname());
-            } else if (afterEditObject instanceof Patient patient) {
-                return new SimpleStringProperty(patient.getName() + " " + patient.getSurname());
-            } else if (afterEditObject instanceof MedicalDevice medicalDevice) {
+            if (afterEditObject instanceof MedicalDevice medicalDevice) {
                 return new SimpleStringProperty(medicalDevice.getName() + " " + medicalDevice.getModelNumber());
-            } else if (afterEditObject instanceof Department department) {
-                return new SimpleStringProperty(department.getName());
             } else {
                 return null;
             }
@@ -88,7 +68,7 @@ public class EditHistoryController {
         timeColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getTime().format(DateTimeFormatter.ofPattern("HH:mm"))));
 
         if(editInfoList.size() > 0) {
-           editHistoryTableView.setItems(FXCollections.observableList(editInfoList));
+            editHistoryTableView.setItems(FXCollections.observableList(editInfoList));
         }
     }
 }

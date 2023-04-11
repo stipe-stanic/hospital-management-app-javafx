@@ -16,7 +16,6 @@ public class EditInfo<T, R> implements Serializable {
     LocalDate date;
     LocalTime time;
 
-
     public EditInfo(T afterEditObject, R user, List<String> preEditList, List<String> afterEditList, LocalDate date, LocalTime time) {
         this.afterEditObject = afterEditObject;
         this.user = user;

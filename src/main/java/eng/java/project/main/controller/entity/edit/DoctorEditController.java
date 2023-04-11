@@ -1,5 +1,6 @@
 package eng.java.project.main.controller.entity.edit;
 
+import eng.java.project.entity.hospital.core.CoreObject;
 import eng.java.project.entity.hospital.core.Doctor;
 import eng.java.project.entity.hospital.util.EditInfo;
 import eng.java.project.entity.hospital.util.Symptom;
@@ -16,9 +17,8 @@ import org.h2.engine.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
+import javax.security.auth.login.CredentialException;
+import java.io.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -43,6 +43,7 @@ public class DoctorEditController {
     private List<String> preEdit = new ArrayList<>();
     private List<String> afterEdit = new ArrayList<>();
 
+    List<EditInfo<CoreObject, GlobalUser>> editedDoctors = new ArrayList<>();
     GlobalUser user = GlobalUser.getInstance();
 
     public void initialize() {
@@ -177,15 +178,32 @@ public class DoctorEditController {
                         .map(d -> d.getTitle() + " " + d.getName() + " " + d.getSurname()).toList()));
                 doctorListView.refresh();
 
+                File file = new File(SERIALIZATION_FILE_NAME);
+                if(file.exists()) {
+                    try(ObjectInputStream in = new ObjectInputStream(new FileInputStream(SERIALIZATION_FILE_NAME))) {
+                        try {
+                            editedDoctors = (List<EditInfo<CoreObject, GlobalUser>>) in.readObject();
+                        } catch (EOFException ex) {
+                            String msg = "Reached end of file when deserializing 'EditInfo' objects";
+                            logger.info(msg, ex);
+                        }
+                    } catch (IOException | ClassNotFoundException ex) {
+                        String msg = "Error occurred while attempting deserialization of 'EditInfo' object";
+                        logger.error(msg, ex);
+                    }
+                }
 
-                try (ObjectOutputStream out = new ObjectOutputStream(
-                        new FileOutputStream(SERIALIZATION_FILE_NAME, true))) {
-                    EditInfo<Doctor, GlobalUser> editInfo = new EditInfo<>(afterEditDoctor, user, preEdit, afterEdit, LocalDate.now(), LocalTime.now());
-                    out.writeObject(editInfo);
+                try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(SERIALIZATION_FILE_NAME))) {
+                    EditInfo<CoreObject, GlobalUser> editInfo = new EditInfo<>(afterEditDoctor, user, preEdit, afterEdit, LocalDate.now(), LocalTime.now());
+                    editedDoctors.add(editInfo);
+                    out.writeObject(editedDoctors);
                 } catch (IOException ex) {
                     String msg = "Error occured while serialiazing 'EditInfo' object";
                     logger.error(msg, ex);
                 }
+
+                preEdit.clear();
+                afterEdit.clear();
 
                 name.clear();
                 surname.clear();

@@ -28,4 +28,6 @@ module eng.java.project.main {
     opens eng.java.project.main.controller.entity.view to javafx.fxml;
     exports eng.java.project.main.controller.entity.insert;
     opens eng.java.project.main.controller.entity.insert to javafx.fxml;
+    exports eng.java.project.main.controller.entity.edit_history;
+    opens eng.java.project.main.controller.entity.edit_history to javafx.fxml;
 }

@@ -130,6 +130,42 @@ public class MenuController {
             e.printStackTrace();
         }
     }
+    public void showDoctorEditHistory() {
+        GridPane root;
+        try {
+            root = (GridPane) FXMLLoader.load(Objects.requireNonNull(HealthcareApplication.class.getResource("edit_history/doctors_edit_history_view.fxml")));
+            HealthcareApplication.setMainPage(root);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    public void showPatientEditHistory() {
+        GridPane root;
+        try {
+            root = (GridPane) FXMLLoader.load(Objects.requireNonNull(HealthcareApplication.class.getResource("edit_history/patients_edit_history_view.fxml")));
+            HealthcareApplication.setMainPage(root);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    public void showDepartmentEditHistory() {
+        GridPane root;
+        try {
+            root = (GridPane) FXMLLoader.load(Objects.requireNonNull(HealthcareApplication.class.getResource("edit_history/departments_edit_history_view.fxml")));
+            HealthcareApplication.setMainPage(root);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    public void showMedicalDeviceEditHistory() {
+        GridPane root;
+        try {
+            root = (GridPane) FXMLLoader.load(Objects.requireNonNull(HealthcareApplication.class.getResource("edit_history/medical_devices_edit_history_view.fxml")));
+            HealthcareApplication.setMainPage(root);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     public void showHome() {
         GridPane root;

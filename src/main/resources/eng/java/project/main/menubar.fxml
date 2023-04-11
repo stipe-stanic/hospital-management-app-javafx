@@ -42,6 +42,10 @@
     </Menu>
     <Menu  mnemonicParsing="false" text="EditHistory">
         <MenuItem mnemonicParsing="false" onAction="#showEditHistory" text="Show" />
+        <MenuItem mnemonicParsing="false" onAction="#showDoctorEditHistory" text="Doctors" />
+        <MenuItem mnemonicParsing="false" onAction="#showPatientEditHistory" text="Patients" />
+        <MenuItem mnemonicParsing="false" onAction="#showDepartmentEditHistory" text="Departments" />
+        <MenuItem mnemonicParsing="false" onAction="#showMedicalDevices" text="Medical devices" />
     </Menu>
 </menus>
 </MenuBar>

@@ -854,7 +854,6 @@ public final class DatabaseUtil implements DatabaseSource {
                         withTreatmentList(treatmentList).withTreatmentHistory(treatmentHistory).
                         withSymptomList(symptomList).withSymptomHistory(symptomHistory).
                         withInsurance(insuranceProvider).build();
-
                 patientList.add(patient);
             }
         } catch (SQLException | IOException ex) {

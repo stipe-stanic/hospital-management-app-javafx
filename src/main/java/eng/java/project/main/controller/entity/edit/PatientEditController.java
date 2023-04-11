@@ -1,5 +1,6 @@
 package eng.java.project.main.controller.entity.edit;
 
+import eng.java.project.entity.hospital.core.CoreObject;
 import eng.java.project.entity.hospital.core.Doctor;
 import eng.java.project.entity.hospital.core.Patient;
 import eng.java.project.entity.hospital.util.EditInfo;
@@ -13,9 +14,7 @@ import javafx.scene.control.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -38,6 +37,8 @@ public class PatientEditController {
 
     private List<String> preEdit = new ArrayList<>();
     private List<String> afterEdit = new ArrayList<>();
+
+    List<EditInfo<CoreObject, GlobalUser>> editedPatients = new ArrayList<>();
     GlobalUser user = GlobalUser.getInstance();
 
     public void initialize() {
@@ -126,9 +127,6 @@ public class PatientEditController {
             sqlQuery.append(" WHERE id = ?");
             parameters.add("id");
 
-
-
-
             try {
                 HealthcareApplication.getDatabaseSource().updatePatient(selectedPatient, sqlQuery.toString(), parameters);
                 Patient afterEditPatient = new Patient(selectedPatient);
@@ -137,10 +135,26 @@ public class PatientEditController {
                         .map(d -> d.getName() + " " + d.getSurname()).toList()));
                 patientListView.refresh();
 
+                File file = new File(SERIALIZATION_FILE_NAME);
+                if(file.exists()) {
+                    try(ObjectInputStream in = new ObjectInputStream(new FileInputStream(SERIALIZATION_FILE_NAME))) {
+                        try {
+                            editedPatients = (List<EditInfo<CoreObject, GlobalUser>>) in.readObject();
+                        } catch (EOFException ex) {
+                            String msg = "Reached end of file when deserializing 'EditInfo' objects";
+                            logger.info(msg, ex);
+                        }
+                    } catch (IOException | ClassNotFoundException ex) {
+                        String msg = "Error occurred while attempting deserialization of 'EditInfo' object";
+                        logger.error(msg, ex);
+                    }
+                }
+
                 try (ObjectOutputStream out = new ObjectOutputStream(
-                        new FileOutputStream(SERIALIZATION_FILE_NAME, true))) {
-                    EditInfo<Patient, GlobalUser> editInfo = new EditInfo<>(afterEditPatient, user, preEdit, afterEdit, LocalDate.now(), LocalTime.now());
-                    out.writeObject(editInfo);
+                        new FileOutputStream(SERIALIZATION_FILE_NAME))) {
+                    EditInfo<CoreObject, GlobalUser> editInfo = new EditInfo<>(afterEditPatient, user, preEdit, afterEdit, LocalDate.now(), LocalTime.now());
+                    editedPatients.add(editInfo);
+                    out.writeObject(editedPatients);
                 } catch (IOException ex) {
                     String msg = "Error occured while serialiazing 'EditInfo' object";
                     logger.error(msg, ex);
@@ -165,7 +179,6 @@ public class PatientEditController {
             }
         }
     }
-
 
     public void deletePatient() {
         String alertMessage = "Are you sure you want to remove selected patient: " + selectedPatient.getName() + " "

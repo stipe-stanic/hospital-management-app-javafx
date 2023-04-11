@@ -12,6 +12,7 @@ import javafx.util.converter.LocalDateStringConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
@@ -58,7 +59,9 @@ public class DoctorController {
         patientsColum.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getPatientList().stream()
                 .map(p -> p.getName() + " " + p.getSurname()).collect(Collectors.joining("\n"))));
         appointmentsColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getAppointmentsList().stream()
-                .map(a -> a.getDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy")) + " " + a.getTime()).collect(Collectors.joining("\n"))));
+                .filter(a -> a.getDate().isAfter(LocalDate.now()))
+                .map(a -> a.getDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy")) + " - " + a.getTime() + "h")
+                .collect(Collectors.joining("\n"))));
 
         try {
             allDoctors = HealthcareApplication.getDatabaseSource().queryAllDoctors();
