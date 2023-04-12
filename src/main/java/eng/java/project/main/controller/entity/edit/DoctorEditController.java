@@ -37,13 +37,11 @@ public class DoctorEditController {
 
     private static final String SERIALIZATION_FILE_NAME = "files\\edited_doctor_object.dat";
     private static final Logger logger = LoggerFactory.getLogger(DoctorEditController.class);
+    
     private List<Doctor> allDoctors;
     private Doctor selectedDoctor = null;
-
-    private List<String> preEdit = new ArrayList<>();
-    private List<String> afterEdit = new ArrayList<>();
-
-    List<EditInfo<CoreObject, GlobalUser>> editedDoctors = new ArrayList<>();
+    private final List<String> originalAttributes = new ArrayList<>();
+    private final List<String> editedAttributes = new ArrayList<>();
     GlobalUser user = GlobalUser.getInstance();
 
     public void initialize() {
@@ -61,15 +59,16 @@ public class DoctorEditController {
         doctorListView.setItems(FXCollections.observableList(allDoctors.stream()
                 .map(d -> d.getTitle() + " " + d.getName() + " " + d.getSurname()).toList()));
 
+        // Get selected doctor and fill text fields with its attributes
         doctorListView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             if(newValue == null) {
                 newValue = oldValue;
             }
-            String[] selectParts = newValue.split(" ");
-            String titleSelectedFirst = selectParts[0];
-            String titleSelectedSecond = selectParts[1];
-            String nameSelected = selectParts[2];
-            String surnameSelected = selectParts[3];
+            String[] selectedParts = newValue.split(" ");
+            String titleSelectedFirst = selectedParts[0];
+            String titleSelectedSecond = selectedParts[1];
+            String nameSelected = selectedParts[2];
+            String surnameSelected = selectedParts[3];
 
             selectedDoctor = allDoctors.stream()
                     .filter(d -> d.getTitle().equals(titleSelectedFirst + " " + titleSelectedSecond) && d.getName().equals(nameSelected) && d.getSurname().equals(surnameSelected))
@@ -97,114 +96,45 @@ public class DoctorEditController {
         Optional<ButtonType> result = alert.showAndWait();
 
         if(result.isPresent() && result.get() == ButtonType.OK) {
-            Doctor preEditDoctor = new Doctor(selectedDoctor);
-
+            Doctor originalDoctor = new Doctor(selectedDoctor);
             StringBuilder sqlQuery = new StringBuilder("UPDATE DOCTOR SET");
-            List<String> parameters = new ArrayList<>();
-            if(!(name.getText().equals(selectedDoctor.getName()))) {
-                selectedDoctor.setName(name.getText());
-                sqlQuery.append(" name = ?,");
-                parameters.add("name");
 
-                preEdit.add(preEditDoctor.getName());
-                afterEdit.add(selectedDoctor.getName());
-            }
-            if(!surname.getText().equals(selectedDoctor.getSurname())) {
-                selectedDoctor.setSurname(surname.getText());
-                sqlQuery.append(" surname = ?,");
-                parameters.add("surname");
-
-                preEdit.add(preEditDoctor.getSurname());
-                afterEdit.add(selectedDoctor.getSurname());
-            }
-            if(!title.getText().equals(selectedDoctor.getTitle())) {
-                selectedDoctor.setTitle(title.getText());
-                sqlQuery.append(" title = ?,");
-                parameters.add("title");
-
-                preEdit.add(preEditDoctor.getTitle());
-                afterEdit.add(selectedDoctor.getTitle());
-            }
-            if(!phoneNumber.getText().equals(selectedDoctor.getPhoneNumber())) {
-                selectedDoctor.setName(phoneNumber.getText());
-                sqlQuery.append(" phone_number = ?,");
-                parameters.add("phone_number");
-
-                preEdit.add(preEditDoctor.getPhoneNumber());
-                afterEdit.add(selectedDoctor.getPhoneNumber());
-            }
-            if(!yearsOfExperience.getText().equals(selectedDoctor.getYearsOfExperience().toString())) {
-                selectedDoctor.setYearsOfExperience(Integer.valueOf(yearsOfExperience.getText()));
-                sqlQuery.append(" years_of_experience = ?,");
-                parameters.add("years_of_experience");
-
-                preEdit.add(preEditDoctor.getYearsOfExperience().toString());
-                afterEdit.add(selectedDoctor.getYearsOfExperience().toString());
-            }
-            if(!workStartTime.getText().equals(selectedDoctor.getWorkStartTime().toString())) {
-                selectedDoctor.setWorkStartTime(LocalTime.parse(workStartTime.getText()));
-                sqlQuery.append(" work_start_time = ?,");
-                parameters.add("work_start_time");
-
-                preEdit.add(preEditDoctor.getWorkStartTime().toString());
-                afterEdit.add(selectedDoctor.getWorkStartTime().toString());
-            }
-            if(!workEndTime.getText().equals(selectedDoctor.getWorkEndTime().toString())) {
-                selectedDoctor.setWorkEndTime(LocalTime.parse(workEndTime.getText()));
-                sqlQuery.append(" work_end_time = ?,");
-                parameters.add("work_end_time");
-
-                preEdit.add(preEditDoctor.getWorkEndTime().toString());
-                afterEdit.add(selectedDoctor.getWorkEndTime().toString());
-            }
-            if(!dateOfBirth.getValue().equals(selectedDoctor.getDateOfBirth())) {
-                selectedDoctor.setDateOfBirth(dateOfBirth.getValue());
-                sqlQuery.append(" date_of_birth = ?,");
-                parameters.add("date_of_birth");
-
-                preEdit.add(preEditDoctor.getDateOfBirth().toString());
-                afterEdit.add(selectedDoctor.getDateOfBirth().toString());
+            // Maps sqlQuery and parameters values
+            Map<String, String> queryParameterMap = buildDynamicQuery(originalDoctor);
+            for (String key : queryParameterMap.keySet()) {
+                sqlQuery.append(" ").append(key).append(",");
             }
 
+            // Deletes the last coma
             sqlQuery.deleteCharAt(sqlQuery.length() - 1);
             sqlQuery.append(" WHERE id = ?");
+
+            List<String> parameters = new ArrayList<>(queryParameterMap.values());
             parameters.add("id");
 
             try {
                 HealthcareApplication.getDatabaseSource().updateDoctor(selectedDoctor, sqlQuery.toString(), parameters);
-                Doctor afterEditDoctor = new Doctor(selectedDoctor);
+                Doctor editedAttributesDoctor = new Doctor(selectedDoctor);
                 allDoctors = HealthcareApplication.getDatabaseSource().queryAllDoctors();
                 doctorListView.setItems(FXCollections.observableList(allDoctors.stream()
                         .map(d -> d.getTitle() + " " + d.getName() + " " + d.getSurname()).toList()));
                 doctorListView.refresh();
 
+                // Check if serialized file already exists, updates list with the deserialized list
                 File file = new File(SERIALIZATION_FILE_NAME);
+                List<EditInfo<CoreObject, GlobalUser>> editedDoctors = new ArrayList<>();
                 if(file.exists()) {
-                    try(ObjectInputStream in = new ObjectInputStream(new FileInputStream(SERIALIZATION_FILE_NAME))) {
-                        try {
-                            editedDoctors = (List<EditInfo<CoreObject, GlobalUser>>) in.readObject();
-                        } catch (EOFException ex) {
-                            String msg = "Reached end of file when deserializing 'EditInfo' objects";
-                            logger.info(msg, ex);
-                        }
-                    } catch (IOException | ClassNotFoundException ex) {
-                        String msg = "Error occurred while attempting deserialization of 'EditInfo' object";
-                        logger.error(msg, ex);
-                    }
+                    editedDoctors = deserializeEditedDoctors();
                 }
 
-                try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(SERIALIZATION_FILE_NAME))) {
-                    EditInfo<CoreObject, GlobalUser> editInfo = new EditInfo<>(afterEditDoctor, user, preEdit, afterEdit, LocalDate.now(), LocalTime.now());
-                    editedDoctors.add(editInfo);
-                    out.writeObject(editedDoctors);
-                } catch (IOException ex) {
-                    String msg = "Error occured while serialiazing 'EditInfo' object";
-                    logger.error(msg, ex);
-                }
+                // Adds new edited doctor to deserialized list
+                serializeEditedDoctors(editedDoctors, editedAttributesDoctor);
 
-                preEdit.clear();
-                afterEdit.clear();
+                // Clearing lists of attributes since they are globally declared
+                originalAttributes.clear();
+                editedAttributes.clear();
 
+                // Clearing text fields after the update
                 name.clear();
                 surname.clear();
                 title.clear();
@@ -246,6 +176,97 @@ public class DoctorEditController {
                 deleteAlert.setTitle("Error");
                 deleteAlert.show();
             }
+        }
+    }
+
+    private Map<String, String> buildDynamicQuery(Doctor originalDoctor) {
+        Map<String, String> queryParameterMap = new HashMap<>();
+
+        // Checks if text field value is edited
+        if(!(name.getText().equals(selectedDoctor.getName()))) {
+            selectedDoctor.setName(name.getText());
+            queryParameterMap.put("name = ?", "name");
+
+            originalAttributes.add(originalDoctor.getName());
+            editedAttributes.add(selectedDoctor.getName());
+        }
+        if(!surname.getText().equals(selectedDoctor.getSurname())) {
+            selectedDoctor.setSurname(surname.getText());
+            queryParameterMap.put("surname = ?", "surname");
+
+            originalAttributes.add(originalDoctor.getSurname());
+            editedAttributes.add(selectedDoctor.getSurname());
+        }
+        if(!title.getText().equals(selectedDoctor.getTitle())) {
+            selectedDoctor.setTitle(title.getText());
+            queryParameterMap.put("title = ?", "title");
+
+            originalAttributes.add(originalDoctor.getTitle());
+            editedAttributes.add(selectedDoctor.getTitle());
+        }
+        if(!phoneNumber.getText().equals(selectedDoctor.getPhoneNumber())) {
+            selectedDoctor.setName(phoneNumber.getText());
+            queryParameterMap.put("phone_number = ?", "phone_number");
+
+            originalAttributes.add(originalDoctor.getPhoneNumber());
+            editedAttributes.add(selectedDoctor.getPhoneNumber());
+        }
+        if(!yearsOfExperience.getText().equals(selectedDoctor.getYearsOfExperience().toString())) {
+            selectedDoctor.setYearsOfExperience(Integer.valueOf(yearsOfExperience.getText()));
+            queryParameterMap.put("years_of_experience = ?", "years_of_experience");
+
+            originalAttributes.add(originalDoctor.getYearsOfExperience().toString());
+            editedAttributes.add(selectedDoctor.getYearsOfExperience().toString());
+        }
+        if(!workStartTime.getText().equals(selectedDoctor.getWorkStartTime().toString())) {
+            selectedDoctor.setWorkStartTime(LocalTime.parse(workStartTime.getText()));
+            queryParameterMap.put("work_start_time = ?", "work_start_time");
+
+            originalAttributes.add(originalDoctor.getWorkStartTime().toString());
+            editedAttributes.add(selectedDoctor.getWorkStartTime().toString());
+        }
+        if(!workEndTime.getText().equals(selectedDoctor.getWorkEndTime().toString())) {
+            selectedDoctor.setWorkEndTime(LocalTime.parse(workEndTime.getText()));
+            queryParameterMap.put("work_end_time = ?", "work_end_time");
+
+            originalAttributes.add(originalDoctor.getWorkEndTime().toString());
+            editedAttributes.add(selectedDoctor.getWorkEndTime().toString());
+        }
+        if(!dateOfBirth.getValue().equals(selectedDoctor.getDateOfBirth())) {
+            selectedDoctor.setDateOfBirth(dateOfBirth.getValue());
+            queryParameterMap.put("date_of_birth = ?", "date_of_birth");
+
+            originalAttributes.add(originalDoctor.getDateOfBirth().toString());
+            editedAttributes.add(selectedDoctor.getDateOfBirth().toString());
+        }
+
+        return queryParameterMap;
+    }
+    private List<EditInfo<CoreObject, GlobalUser>> deserializeEditedDoctors() {
+        List<EditInfo<CoreObject, GlobalUser>> editedDoctors = new ArrayList<>();
+
+        try(ObjectInputStream in = new ObjectInputStream(new FileInputStream(SERIALIZATION_FILE_NAME))) {
+            try {
+                editedDoctors = (List<EditInfo<CoreObject, GlobalUser>>) in.readObject();
+            } catch (EOFException ex) {
+                String msg = "Reached end of file when deserializing 'EditInfo' objects";
+                logger.info(msg, ex);
+            }
+        } catch (IOException | ClassNotFoundException ex) {
+            String msg = "Error occurred while attempting deserialization of 'EditInfo' object";
+            logger.error(msg, ex);
+        }
+
+        return editedDoctors;
+    }
+    private void serializeEditedDoctors(List<EditInfo<CoreObject, GlobalUser>> editedDoctors, Doctor editedAttributesDoctor) {
+        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(SERIALIZATION_FILE_NAME))) {
+            EditInfo<CoreObject, GlobalUser> editInfo = new EditInfo<>(editedAttributesDoctor, user, originalAttributes, editedAttributes, LocalDate.now(), LocalTime.now());
+            editedDoctors.add(editInfo);
+            out.writeObject(editedDoctors);
+        } catch (IOException ex) {
+            String msg = "Error occured while serialiazing 'EditInfo' object";
+            logger.error(msg, ex);
         }
     }
 }
